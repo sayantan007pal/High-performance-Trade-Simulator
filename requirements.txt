@@ -1,0 +1,8 @@
+PyQt6
+websockets
+aiohttp
+scikit-learn
+numpy
+pandas
+matplotlib
+qasync 
