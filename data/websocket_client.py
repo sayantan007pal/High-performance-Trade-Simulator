@@ -1,7 +1,11 @@
 import asyncio
 import websockets
 import json
+import time
+import logging
 from typing import Callable, Dict, List
+
+logging.basicConfig(level=logging.INFO)
 
 OKX_WS_URL = "wss://ws.gomarket-cpp.goquant.io/ws/l2-orderbook/okx/"
 
@@ -35,6 +39,34 @@ class WebSocketManager:
         for task in self.tasks:
             task.cancel()
         await asyncio.gather(*self.tasks, return_exceptions=True)
+
+class WebSocketOrderBookClient:
+    def __init__(self, base_url="wss://ws.gomarket-cpp.goquant.io/ws/l2-orderbook/okx/"):
+        self.base_url = base_url
+        self.ws = None
+        self.symbol = None
+        self._running = False
+
+    async def connect(self, symbol):
+        self.symbol = symbol
+        url = f"{self.base_url}{symbol}"
+        while True:
+            try:
+                async with websockets.connect(url) as ws:
+                    self.ws = ws
+                    self._running = True
+                    logging.info(f"Connected to {url}")
+                    async for message in ws:
+                        start = time.perf_counter()
+                        data = json.loads(message)
+                        latency = (time.perf_counter() - start) * 1000
+                        yield data, latency
+            except Exception as e:
+                logging.error(f"WebSocket error: {e}. Reconnecting in 3s...")
+                await asyncio.sleep(3)
+
+    def stop(self):
+        self._running = False
 
 # Standalone test
 if __name__ == "__main__":

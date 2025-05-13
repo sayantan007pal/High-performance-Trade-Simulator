@@ -1,125 +1,66 @@
 # High-Performance Trade Simulator
 
-A real-time trade simulator for cryptocurrency spot markets, leveraging live L2 orderbook data to estimate transaction costs and market impact. Built with Streamlit for a modern, interactive UI.
+## Overview
+This simulator estimates transaction costs and market impact for cryptocurrency spot trading using real-time L2 orderbook data from OKX. It features a user interface for parameter input and displays processed outputs including slippage, fees, market impact, and latency metrics.
 
 ## Features
-- Real-time L2 orderbook streaming from OKX
-- Multi-symbol support
-- On-the-fly regression modeling for slippage and maker/taker prediction (scikit-learn)
-- Almgren-Chriss market impact model
-- Dynamic fetching of volatility and fee tier
-- Performance benchmarking (latency, UI update, processing)
-- Desktop UI with input/output panels
+- Real-time L2 orderbook data via WebSocket
+- User interface (Streamlit) for parameter input and output display
+- Models for slippage, fees, market impact (Almgren-Chriss), and maker/taker prediction
+- Performance benchmarking and optimization
 
-## Model/Algorithm Explanations
+## UI Components
+- **Left Panel:** Input parameters (exchange, asset, order type, quantity, volatility, fee tier)
+- **Right Panel:** Output parameters (expected slippage, fees, market impact, net cost, maker/taker proportion, internal latency)
 
+## Model Selection and Parameters
 ### Slippage Estimation
-- Uses a regression-based approach to estimate the price impact of executing a market order of a given size.
-- Walks the orderbook to simulate the cost of filling the order, then compares to the mid price.
-- Linear regression is used for live estimation; can be extended to quantile regression for more robust modeling.
+- Uses linear or quantile regression (scikit-learn) on historical or simulated orderbook data.
+- Features: order size, volatility, orderbook depth, etc.
 
-### Market Impact (Almgren-Chriss Model)
-- Implements a simplified version of the Almgren-Chriss optimal execution model.
-- Market impact is split into temporary and permanent components:
-  - **Temporary Impact:** Immediate price change from executing part of the order.
-  - **Permanent Impact:** Lasting price change due to information revealed by the trade.
-- Execution risk is also considered, based on asset volatility and order size.
-- The model balances market impact and execution risk to estimate the true cost of trading.
+### Market Impact (Almgren-Chriss)
+- Implements the Almgren-Chriss model for optimal execution and market impact estimation.
+- Parameters: volatility, daily volume, risk aversion, order size.
+- Reference: [Almgren-Chriss Model](https://www.linkedin.com/pulse/understanding-almgren-chriss-model-optimal-portfolio-execution-pal-pmeqc/)
+
+### Fee Model
+- Rule-based, based on OKX fee tiers (see FeeModel in `models.py`).
 
 ### Maker/Taker Proportion
-- Uses logistic regression to estimate the probability of a trade being executed as a maker or taker, based on orderbook spread and other features.
-- Dummy data is used for demonstration; can be extended with historical data for more accuracy.
+- Logistic regression to estimate the probability of an order being maker or taker.
 
-### Net Cost
-- The sum of expected slippage, market impact, and fees.
+## Regression Techniques
+- **Linear Regression:** For slippage estimation.
+- **Quantile Regression:** For robust slippage estimation under outliers.
+- **Logistic Regression:** For maker/taker prediction.
 
-## Regression/Market Impact Methodology
-- **Slippage:**
-  - Simulate market order by walking the book for the specified quantity.
-  - Calculate the difference between execution price and mid price.
-  - Use regression to model slippage as a function of order size, spread, and volatility.
-- **Market Impact:**
-  - Almgren-Chriss model parameters (gamma, eta, risk aversion) are configurable.
-  - Volatility is estimated from recent historical candles.
-- **Maker/Taker:**
-  - Logistic regression on spread and other features.
+## Market Impact Calculation
+- Almgren-Chriss model is used to estimate the cost of executing large orders over time, considering volatility and liquidity.
 
-## Performance/Optimization Notes
-- All async data fetching (WebSocket, REST) is handled in a background thread with a thread-safe queue.
-- UI updates and model calculations are performed in the main Streamlit thread to avoid session state issues.
-- Latency is measured and displayed for each tick.
-- Efficient data structures (numpy arrays, pandas DataFrames) are used for orderbook and analytics.
-- The system is designed to process data faster than the stream is received.
+## Performance Optimization
+- **Async WebSocket:** Non-blocking, high-throughput data processing.
+- **Efficient Data Structures:** Uses numpy/pandas for orderbook and tick data.
+- **Threading/Async:** Separates network, UI, and model computation.
+- **Memory Profiling:** Tools like `memory_profiler` can be used for bottleneck analysis.
 
-## How to Run and Test the App (Step-by-Step Guide)
+## Benchmarking
+- **Data Processing Latency:** Time to process each orderbook tick.
+- **UI Update Latency:** Time to update UI with new results.
+- **End-to-End Latency:** Total time from data receipt to output display.
 
-### 1. Preparation
-- Connect to your VPN (choose a region where OKX is accessible, e.g., Singapore or Hong Kong).
-- Open your terminal and navigate to your project directory.
+## Error Handling & Logging
+- Structured logging using Python's `logging` module.
+- Robust exception handling in WebSocket and model code.
 
-### 2. Start the App
-- Run:
-  ```bash
-  streamlit run main.py
-  ```
-- Wait for the message that the app is running (with the local URL).
+## Running the Simulator
+1. Install requirements: `pip install -r requirements.txt`
+2. Start the UI: `streamlit run app.py`
 
-### 3. Open the App in Your Browser
-- Go to `http://localhost:8501` (or the URL shown in your terminal).
+## File Structure
+- `app.py`: Streamlit UI
+- `data/websocket_client.py`: WebSocket client for orderbook data
+- `data/models.py`: Models for slippage, market impact, fees, maker/taker
+- `README.md`: Documentation
 
-### 4. Configure the Simulation
-- In the sidebar:
-  - Uncheck "Demo Mode (Simulate Data)".
-  - Enter symbols, e.g.:
-    ```
-    BTC-USDT-SWAP,ETH-USDT-SWAP
-    ```
-  - Set Quantity (USD) to `100` (or any value).
-
-### 5. Start the Simulation
-- Click "Start Simulation".
-- You should see a green success message and the outputs section.
-
-### 6. Observe Real-Time Outputs
-- In the main area, you will see:
-  - Simulation Outputs (Multi-Symbol):
-    - Expected Slippage, Fees, Market Impact, Net Cost, Maker/Taker Proportion, Internal Latency for each symbol.
-  - Orderbook Chart and Table (Multi-Symbol):
-    - Tabs for each symbol.
-    - Real-time orderbook depth chart, top 5 bids/asks, and last update timestamp.
-  - Benchmark Log:
-    - Logs updating with connection and data events.
-
-### 7. Test Multi-Symbol and Parameter Changes
-- Change the symbols or quantity in the sidebar and click "Start Simulation" again.
-- The app will update for new symbols and parameters.
-
-### 8. Show Model Documentation
-- Open the "ℹ️ Model & Algorithm Documentation" expander.
-- Review the models and methodology.
-
-### 9. Error Handling (Optional)
-- Enter an invalid symbol and check the log for error messages in the Benchmark Log.
-
-### 10. Wrap Up
-- Summarize the features: real-time data, analytics, multi-symbol support, benchmarking, and documentation.
-
----
-
-**If you want to test with simulated data (no VPN required), check "Demo Mode (Simulate Data)" in the sidebar before starting the simulation.**
-
-## Usage
-1. Install requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the app:
-   ```bash
-   streamlit run main.py
-   ```
-3. Open your browser to `http://localhost:8501`.
-
-## References
-- Almgren, R., & Chriss, N. (2000). Optimal Execution of Portfolio Transactions. Journal of Risk.
-- https://www.linkedin.com/pulse/understanding-almgren-chriss-model-optimal-portfolio-execution-pal-pmeqc/
-- OKX API documentation 
+## License
+MIT 
