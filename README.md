@@ -54,10 +54,12 @@ This simulator estimates transaction costs and market impact for cryptocurrency 
 
 ## Running the Simulator
 1. Install requirements: `pip install -r requirements.txt`
-2. Start the UI: `streamlit run app.py`
-
+2. Start the UI(1.0): `streamlit run app.py`
+3. Start the UI(2.0): `streamlit run main.py`
+3. Running the tests : `python -m pytest tests/`
 ## File Structure
-- `app.py`: Streamlit UI
+- `app.py`: Streamlit UI(1.0)
+- `main.py`: Streamlit UI(2.0)
 - `data/websocket_client.py`: WebSocket client for orderbook data
 - `data/models.py`: Models for slippage, market impact, fees, maker/taker
 - `README.md`: Documentation

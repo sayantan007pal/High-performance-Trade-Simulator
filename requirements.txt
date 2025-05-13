@@ -5,3 +5,4 @@ websockets
 pandas
 matplotlib
 plotly 
+pytest
