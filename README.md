@@ -51,6 +51,63 @@ A real-time trade simulator for cryptocurrency spot markets, leveraging live L2 
 - Efficient data structures (numpy arrays, pandas DataFrames) are used for orderbook and analytics.
 - The system is designed to process data faster than the stream is received.
 
+## How to Run and Test the App (Step-by-Step Guide)
+
+### 1. Preparation
+- Connect to your VPN (choose a region where OKX is accessible, e.g., Singapore or Hong Kong).
+- Open your terminal and navigate to your project directory.
+
+### 2. Start the App
+- Run:
+  ```bash
+  streamlit run main.py
+  ```
+- Wait for the message that the app is running (with the local URL).
+
+### 3. Open the App in Your Browser
+- Go to `http://localhost:8501` (or the URL shown in your terminal).
+
+### 4. Configure the Simulation
+- In the sidebar:
+  - Uncheck "Demo Mode (Simulate Data)".
+  - Enter symbols, e.g.:
+    ```
+    BTC-USDT-SWAP,ETH-USDT-SWAP
+    ```
+  - Set Quantity (USD) to `100` (or any value).
+
+### 5. Start the Simulation
+- Click "Start Simulation".
+- You should see a green success message and the outputs section.
+
+### 6. Observe Real-Time Outputs
+- In the main area, you will see:
+  - Simulation Outputs (Multi-Symbol):
+    - Expected Slippage, Fees, Market Impact, Net Cost, Maker/Taker Proportion, Internal Latency for each symbol.
+  - Orderbook Chart and Table (Multi-Symbol):
+    - Tabs for each symbol.
+    - Real-time orderbook depth chart, top 5 bids/asks, and last update timestamp.
+  - Benchmark Log:
+    - Logs updating with connection and data events.
+
+### 7. Test Multi-Symbol and Parameter Changes
+- Change the symbols or quantity in the sidebar and click "Start Simulation" again.
+- The app will update for new symbols and parameters.
+
+### 8. Show Model Documentation
+- Open the "ℹ️ Model & Algorithm Documentation" expander.
+- Review the models and methodology.
+
+### 9. Error Handling (Optional)
+- Enter an invalid symbol and check the log for error messages in the Benchmark Log.
+
+### 10. Wrap Up
+- Summarize the features: real-time data, analytics, multi-symbol support, benchmarking, and documentation.
+
+---
+
+**If you want to test with simulated data (no VPN required), check "Demo Mode (Simulate Data)" in the sidebar before starting the simulation.**
+
 ## Usage
 1. Install requirements:
    ```bash
