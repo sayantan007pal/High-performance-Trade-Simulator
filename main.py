@@ -17,6 +17,7 @@ exchange = st.sidebar.selectbox("Exchange", ["OKX"])
 symbols = st.sidebar.text_input("Symbols (comma separated)", "BTC-USDT-SWAP,ETH-USDT-SWAP")
 order_type = st.sidebar.selectbox("Order Type", ["market"])
 quantity = st.sidebar.number_input("Quantity (USD)", value=100)
+demo_mode = st.sidebar.checkbox("Demo Mode (Simulate Data)", value=False)
 start_button = st.sidebar.button("Start Simulation")
 
 # --- Model Documentation Expander ---
@@ -93,19 +94,36 @@ async def fetch_fee_vol(session, symbol, queue):
         queue.put({'type': 'log', 'log': f"REST error for {symbol}: {e}"})
 
 async def ws_listener(symbol, queue):
-    url = f"wss://ws.gomarket-cpp.goquant.io/ws/l2-orderbook/okx/{symbol}"
-    queue.put({'type': 'log', 'log': f"Connecting to {url}"})
-    try:
-        async with websockets.connect(url) as ws:
-            async for msg in ws:
-                try:
-                    data = json.loads(msg)
-                    queue.put({'type': 'orderbook', 'symbol': symbol, 'data': data,
-                                'log': f"Received orderbook tick for {symbol} @ {data.get('timestamp', '-')}"})
-                except Exception as e:
-                    queue.put({'type': 'log', 'log': f"Error parsing orderbook for {symbol}: {e}"})
-    except Exception as e:
-        queue.put({'type': 'log', 'log': f"WebSocket error for {symbol}: {e}"})
+    if demo_mode:
+        # Simulate orderbook ticks
+        for _ in range(100):
+            price = np.random.uniform(50000, 60000)
+            bids = [[str(price - i * 2), str(np.random.uniform(0.1, 5))] for i in range(10)]
+            asks = [[str(price + i * 2), str(np.random.uniform(0.1, 5))] for i in range(10)]
+            data = {
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "exchange": "OKX",
+                "symbol": symbol,
+                "bids": bids,
+                "asks": asks
+            }
+            queue.put({'type': 'orderbook', 'symbol': symbol, 'data': data,
+                        'log': f"[DEMO] Simulated orderbook tick for {symbol} @ {data['timestamp']}"})
+            time.sleep(1)
+    else:
+        url = f"wss://ws.gomarket-cpp.goquant.io/ws/l2-orderbook/okx/{symbol}"
+        queue.put({'type': 'log', 'log': f"Connecting to {url}"})
+        try:
+            async with websockets.connect(url) as ws:
+                async for msg in ws:
+                    try:
+                        data = json.loads(msg)
+                        queue.put({'type': 'orderbook', 'symbol': symbol, 'data': data,
+                                    'log': f"Received orderbook tick for {symbol} @ {data.get('timestamp', '-')}"})
+                    except Exception as e:
+                        queue.put({'type': 'log', 'log': f"Error parsing orderbook for {symbol}: {e}"})
+        except Exception as e:
+            queue.put({'type': 'log', 'log': f"WebSocket error for {symbol}: {e}"})
 
 async def async_data_layer(symbol_list, queue):
     async with aiohttp.ClientSession() as session:
