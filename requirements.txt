@@ -1,8 +1,8 @@
-PyQt6
+streamlit
 websockets
 aiohttp
 scikit-learn
 numpy
 pandas
 matplotlib
-qasync 
+plotly 
